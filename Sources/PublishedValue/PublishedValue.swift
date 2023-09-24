@@ -1,11 +1,32 @@
 // The Swift Programming Language
 // https://docs.swift.org/swift-book
 
-/// A macro that produces both a value and a string containing the
-/// source code that generated the value. For example,
+/// A macro that produces a value and a Published.Publisher for the value
 ///
-///     #stringify(x + y)
+///     @PublishedValue(of: Int.self, named: "value")
+///     class Foo {}
 ///
-/// produces a tuple `(x + y, "x + y")`.
-@freestanding(expression)
-public macro stringify<T>(_ value: T) -> (T, String) = #externalMacro(module: "PublishedValueMacros", type: "StringifyMacro")
+/// produces the expanded type:
+///
+///     class Foo {
+///         @Published private(set) var value: Int
+///         var valuePublisher: Published<Int>.Publisher { $value }
+///     }
+///
+/// Requires `import Combine`.
+///
+/// Additionally, this macro can be used on a Protocol definition:
+///
+///     @PublishedValue(of: String.self, named: "name")
+///     protocol NameRepositoryProtocol {}
+///
+/// produces the expanded protocol definition:
+///
+///     protocol NameRepositoryProtocol {
+///         var name: String { get }
+///         var namePublisher: Published<String>.Publisher { get }
+///     }
+///
+
+@attached(member, names: arbitrary)
+public macro PublishedValue<T>(of type: T.Type, named: String) = #externalMacro(module: "PublishedValueMacros", type: "PublishedValueMacro")

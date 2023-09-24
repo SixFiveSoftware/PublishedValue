@@ -7,7 +7,7 @@ import XCTest
 import PublishedValueMacros
 
 let testMacros: [String: Macro.Type] = [
-    "stringify": StringifyMacro.self,
+    "PublishedValue": PublishedValueMacro.self,
 ]
 #endif
 
@@ -16,10 +16,19 @@ final class PublishedValueTests: XCTestCase {
         #if canImport(PublishedValueMacros)
         assertMacroExpansion(
             """
-            #stringify(a + b)
+            @PublishedValue(of: Int.self, named: "value")
+            class Foo {
+            }
             """,
             expandedSource: """
-            (a + b, "a + b")
+            class Foo {
+
+                @Published private (set) var value: Int
+
+                var valuePublisher: Published<Int> .Publisher {
+                    $value
+                }
+            }
             """,
             macros: testMacros
         )
@@ -28,15 +37,26 @@ final class PublishedValueTests: XCTestCase {
         #endif
     }
 
-    func testMacroWithStringLiteral() throws {
+    func testProtocolMacro() throws {
         #if canImport(PublishedValueMacros)
         assertMacroExpansion(
-            #"""
-            #stringify("Hello, \(name)")
-            """#,
-            expandedSource: #"""
-            ("Hello, \(name)", #""Hello, \(name)""#)
-            """#,
+            """
+            @PublishedValue(of: Int.self, named: "value")
+            protocol FooProtocol {
+            }
+            """,
+            expandedSource: """
+            protocol FooProtocol {
+
+                var value: Int {
+                    get
+                }
+
+                var valuePublisher: Published<Int> .Publisher {
+                    get
+                }
+            }
+            """,
             macros: testMacros
         )
         #else
